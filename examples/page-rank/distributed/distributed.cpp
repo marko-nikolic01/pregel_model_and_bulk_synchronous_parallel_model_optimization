@@ -53,7 +53,7 @@ void generateOutput(const string& filename, const vector<double>& pageRanks, con
     outFile.close();
 }
 
-vector<double> rankPagesMPI(unordered_map<string,int>& pageIds, vector<string>& pageNames, vector<vector<int>>& outEdges, vector<vector<int>>& inEdges, int maxSupersteps) {
+vector<double> rankPages(unordered_map<string,int>& pageIds, vector<string>& pageNames, vector<vector<int>>& outEdges, vector<vector<int>>& inEdges, int maxSupersteps) {
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -192,17 +192,17 @@ int main(int argc, char** argv) {
     vector<vector<int>> inEdges;
 
     if (rank == 0) {
-        string inputFile = "./examples/input/graph.txt";
+        string inputFile = "/app/input/graph.txt";
         loadInput(inputFile, pageIds, pageNames, outEdges, inEdges);
     }
 
     auto start = high_resolution_clock::now();
-    vector<double> pageRanks = rankPagesMPI(pageIds, pageNames, outEdges, inEdges, maxSupersteps);
+    vector<double> pageRanks = rankPages(pageIds, pageNames, outEdges, inEdges, maxSupersteps);
     auto end = high_resolution_clock::now();
     long long executionTime = duration_cast<milliseconds>(end - start).count();
 
     if (rank == 0) {
-        string outputFile = "./examples/output/distributed" + to_string(maxSupersteps) + ".txt";
+        string outputFile = "/app/output/distributed_" + to_string(maxSupersteps) + ".txt";
         generateOutput(outputFile, pageRanks, pageNames, executionTime);
     }
 

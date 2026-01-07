@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <string>
 #include <chrono>
-#include <omp.h>
 
 using namespace std;
 using namespace std::chrono;
@@ -50,54 +49,55 @@ void generateOutput(const string& filename, const vector<double>& pageRanks, con
     outFile.close();
 }
 
-vector<double> rankPages(unordered_map<string, int>& pageIds, vector<string>& pageNames, vector<vector<int>>& outEdges, int maxSupersteps) {
+vector<double> rankPages(const unordered_map<string, int>& pageIds, const vector<string>& pageNames, const vector<vector<int>>& outEdges, int maxSupersteps) {
     int n = pageIds.size();
 
     vector<double> pageRanks(n, 1.0 / n);
     vector<double> nextPageRanks(n, 0.0);
-    vector<double> inbox(n, 0.0);
-    vector<double> outbox(n, 0.0);
+    vector<vector<double>> inbox(n);
+    vector<vector<double>> outbox(n);
 
-    double danglingMass;
+    double danglingMass, sum, share, danglingShare;
     bool messagesSent = true;
-
-    int numThreads = omp_get_max_threads();
 
     for (int step = 0; step < maxSupersteps && messagesSent; ++step) {
         danglingMass = 0.0;
         messagesSent = false;
 
-        fill(outbox.begin(), outbox.end(), 0.0);
-
-        #pragma omp parallel for reduction(|:messagesSent) reduction(+:danglingMass)
         for (int v = 0; v < n; ++v) {
-            double sum = inbox[v];
+            sum = 0.0;
+            for (double msg : inbox[v]) {
+                sum += msg;
+            }
+
             nextPageRanks[v] = (1.0 - DAMPING) / n + DAMPING * sum;
 
             if (outEdges[v].empty()) {
                 danglingMass += pageRanks[v];
             } else {
-                double share = pageRanks[v] / outEdges[v].size();
+                share = pageRanks[v] / outEdges[v].size();
                 for (int u : outEdges[v]) {
-                    #pragma omp atomic
-                    outbox[u] += share;
+                    outbox[u].push_back(share);
                     messagesSent = true;
                 }
             }
         }
 
-        double danglingShare = DAMPING * danglingMass / n;
+        danglingShare = DAMPING * danglingMass / n;
 
-        #pragma omp parallel for
         for (int v = 0; v < n; ++v) {
             nextPageRanks[v] += danglingShare;
         }
 
-        swap(inbox, outbox);
+        inbox.swap(outbox);
+        for (auto& box : outbox) {
+            box.clear();
+        }
+
         pageRanks.swap(nextPageRanks);
         fill(nextPageRanks.begin(), nextPageRanks.end(), 0.0);
     }
-    
+
     return pageRanks;
 }
 
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     vector<string> pageNames;
     vector<vector<int>> outEdges;
 
-    string inputFile = "./examples/input/graph.txt";
+    string inputFile = "/app/input/graph.txt";
     loadInput(inputFile, pageIds, pageNames, outEdges);
 
     auto start = high_resolution_clock::now();
@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
     auto end = high_resolution_clock::now();
     long long executionTime =duration_cast<milliseconds>(end - start).count();
 
-    string outputFile = "./examples/output/parallel" + to_string(maxSupersteps) + ".txt";
+    string outputFile = "/app/output/sequential_" + to_string(maxSupersteps) + ".txt";
     generateOutput(outputFile, pageRanks, pageNames, executionTime);
 
     return 0;
