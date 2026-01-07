@@ -103,11 +103,9 @@ vector<double> rankPages(const unordered_map<string, int>& pageIds, const vector
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        cout << "MAX_SUPERSTEPS is missing..." << endl
-             << "Usage: " << argv[0] << " <MAX_SUPERSTEPS>" << endl;
+        cout << "MAX_SUPERSTEPS is missing..." << endl << "Usage: " << argv[0] << " <MAX_SUPERSTEPS>" << endl;
         return 1;
     }
-
     int maxSupersteps = atoi(argv[1]);
 
     unordered_map<string, int> pageIds;
@@ -121,8 +119,6 @@ int main(int argc, char** argv) {
     vector<double> pageRanks = rankPages(pageIds, pageNames, outEdges, maxSupersteps);
     auto end = high_resolution_clock::now();
     long long executionTime =duration_cast<milliseconds>(end - start).count();
-
-    cout << "Execution time: " << executionTime << " ms" << endl;
 
     string outputFile = "./examples/output/sequential" + to_string(maxSupersteps) + ".txt";
     generateOutput(outputFile, pageRanks, pageNames, executionTime);
