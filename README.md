@@ -1,1 +1,0 @@
-# pregel_model_and_bulk_synchronous_parallel_model_optimization

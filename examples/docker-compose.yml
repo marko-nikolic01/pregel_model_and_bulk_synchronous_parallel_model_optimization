@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  page-rank:
+    build: ./page-rank
+    container_name: page-rank
+    volumes:
+      - ./input:/app/input
+      - ./output:/app/output
+    tty: true
+    stdin_open: true
