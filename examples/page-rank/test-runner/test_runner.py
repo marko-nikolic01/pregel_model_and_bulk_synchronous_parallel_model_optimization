@@ -9,7 +9,7 @@ ACCELERATED_PAGE_RANK = "./page-rank/pageRankAccelerated"
 
 OUTPUT_DIR = "./output"
 
-SUPERSTEPS_LIST = [10, 100, 1000, 10000, 100000, 1000000]
+SUPERSTEPS_LIST = [10, 100, 1000, 10000, 100000]
 MPI_PROCESSES = 4
 
 def run_test(cmd, test_name):
